@@ -1,38 +1,6 @@
-#  Energy Data Pipeline — ENTSO-E + PVGIS Integration
+#  Energy project
 
-This project implements a complete data pipeline for collecting, processing, and merging electricity market data from **ENTSO-E** with modeled solar generation data from **PVGIS**.
-
-The final output is a unified, hourly dataset suitable for:
-
-- Energy market analysis  
-- Forecasting models  
-- Academic research  
-- Renewable integration studies  
-
----
-
-##  Project Goals
-
-###  Retrieve ENTSO-E Market Data
-Hourly electricity market data:
-- Day-ahead prices  
-- Actual generation (solar, wind)  
-- Forecasted generation  
-- Cross-border flows  
-
-###  Retrieve PVGIS Solar Data
-- Hourly modeled solar generation  
-- Based on a selected geographic location  
-
-###  Data Alignment
-- Convert all datasets to a common hourly time index  
-- Standard timezone: `Europe/Vilnius`  
-
-###  Dataset Merging
-- Combine ENTSO-E and PVGIS data  
-- Produce a clean, analysis-ready dataset  
-
----
+This project implements a complete data pipeline for collecting, processing, and merging electricity market data.
 
 ##  Project Structure
 
