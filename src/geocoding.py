@@ -1,7 +1,37 @@
 import requests
 
-# Nominatim API endpoint for geocoding
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+
+
+def normalize_address(address):
+    """
+    Normalize different address formats into a single text string.
+
+    Supports:
+        - plain text address (str)
+        - structured address (dict) with optional keys:
+            street, city, postcode, country
+
+    Returns:
+        str: normalized address string
+    """
+    # If address is already a string, return as-is
+    if isinstance(address, str):
+        return address
+
+    # If structured dict, join available fields into a single string
+    if isinstance(address, dict):
+        parts = [
+            address.get("street", ""),
+            address.get("city", ""),
+            address.get("postcode", ""),
+            address.get("country", "")
+        ]
+        # Remove empty parts and join with commas
+        return ", ".join([p for p in parts if p])
+
+    raise TypeError("Address must be a string or a dict.")
+
 
 def geocode_address(address):
     """
@@ -9,11 +39,14 @@ def geocode_address(address):
     using the OpenStreetMap Nominatim API.
 
     Parameters:
-        address (str): Full address or location name to geocode.
+        address (str or dict): Full address as text, or structured address as a dictionary.
 
     Returns:
         tuple: (latitude, longitude) as floats.
     """
+
+    # Normalize input so both string and dict formats are supported
+    address = normalize_address(address)
 
     # Query parameters for Nominatim API
     params = {
