@@ -1,9 +1,12 @@
 from entsoe import EntsoePandasClient
 import pandas as pd
 from .config import API_KEY, TIMEZONE, ZONE_LT
+from src.entsoe_zones import ZONE_MAP
+
 
 # Initialize ENTSO‑E client using API key from config
 client = EntsoePandasClient(api_key=API_KEY)
+
 
 def get_client():
     """
@@ -16,64 +19,63 @@ def get_client():
         raise ValueError("API_KEY not set. Please update config.py")
     return EntsoePandasClient(api_key=API_KEY)
 
+
+def _resolve_zone(zone: str) -> str:
+    """
+    Convert human-readable zone code (e.g., 'SE4', 'LT')
+    into ENTSO‑E EIC code required by the API.
+
+    Raises:
+        KeyError: If zone is unknown.
+    """
+    if zone not in ZONE_MAP:
+        raise KeyError(f"Unknown zone '{zone}'. Not found in ZONE_MAP.")
+    return ZONE_MAP[zone]
+
+
 def get_day_ahead_prices(start, end, zone=ZONE_LT):
     """
     Fetch day‑ahead electricity prices for the specified time range.
-
-    Parameters:
-        start, end (str): Date range (YYYY-MM-DD)
-        zone (str): Bidding zone code (default: Lithuania)
-
-    Returns:
-        pandas.Series: Hourly day‑ahead prices
     """
     client = get_client()
     start = pd.Timestamp(start, tz=TIMEZONE)
     end = pd.Timestamp(end, tz=TIMEZONE)
-    return client.query_day_ahead_prices(zone, start=start, end=end)
+
+    zone_eic = _resolve_zone(zone)
+    return client.query_day_ahead_prices(zone_eic, start=start, end=end)
+
 
 def get_generation(start, end, zone=ZONE_LT):
     """
     Fetch actual generation data (solar, wind, etc.) for the specified time range.
-
-    Parameters:
-        start, end (str): Date range (YYYY-MM-DD)
-        zone (str): Bidding zone code
-
-    Returns:
-        pandas.DataFrame: Generation data with MultiIndex columns
     """
     client = get_client()
     start = pd.Timestamp(start, tz=TIMEZONE)
     end = pd.Timestamp(end, tz=TIMEZONE)
-    return client.query_generation(zone, start=start, end=end)
+
+    zone_eic = _resolve_zone(zone)
+    return client.query_generation(zone_eic, start=start, end=end)
+
 
 def get_wind_solar_forecast(start, end, zone=ZONE_LT):
     """
     Fetch wind and solar generation forecasts for the specified time range.
-
-    Parameters:
-        start, end (str): Date range (YYYY-MM-DD)
-        zone (str): Bidding zone code
-
-    Returns:
-        pandas.DataFrame: Forecasted solar and wind generation
     """
     client = get_client()
     start = pd.Timestamp(start, tz=TIMEZONE)
     end = pd.Timestamp(end, tz=TIMEZONE)
-    return client.query_wind_and_solar_forecast(zone, start=start, end=end)
+
+    zone_eic = _resolve_zone(zone)
+    return client.query_wind_and_solar_forecast(zone_eic, start=start, end=end)
+
 
 def get_crossborder_flows(start, end, tz="Europe/Vilnius"):
     """
     Fetch cross‑border electricity flows between Lithuania and neighboring countries.
 
-    Parameters:
-        start, end (str): Date range (YYYY-MM-DD)
-        tz (str): Target timezone for returned data
-
-    Returns:
-        pandas.DataFrame: Hourly flows for all LT border directions
+    NOTE:
+        Cross‑border flows use COUNTRY CODES, not bidding zones.
+        Therefore, ZONE_MAP is NOT applied here.
     """
 
     client = get_client()
