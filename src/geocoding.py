@@ -6,6 +6,8 @@ NOMINATIM_HEADERS = {
     "User-Agent": "PauliusEnergyProject/1.0 (pauliuspuidokas10@gmail.com)"
 }
 
+ADDRESS_FIELDS = ["street", "city", "postcode", "country"]
+
 
 def normalize_address(address):
     """
@@ -25,13 +27,7 @@ def normalize_address(address):
 
     # If structured dict, join available fields into a single string
     if isinstance(address, dict):
-        parts = [
-            address.get("street", ""),
-            address.get("city", ""),
-            address.get("postcode", ""),
-            address.get("country", "")
-        ]
-        # Remove empty parts and join with commas
+        parts = [address.get(field, "") for field in ADDRESS_FIELDS]
         return ", ".join([p for p in parts if p])
 
     raise TypeError("Address must be a string or a dict.")
