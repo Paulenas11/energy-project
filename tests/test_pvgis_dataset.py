@@ -10,7 +10,7 @@ def test_reverse_geocode():
 # Test PVGIS dataset generation for a single year.
 # Confirms that hourly solar data is successfully retrieved and enriched with metadata.
 def test_pvgis_single_year():
-    df = get_pvgis_dataset(54.8982, 23.9045, 2020)
+    df = get_pvgis_dataset(54.8982, 23.9045, 2023)
     print(df.head())
 
 
@@ -20,7 +20,7 @@ def test_pvgis_single_year():
 #   - unavailable years are skipped safely,
 #   - available years are combined into a single DataFrame.
 def test_pvgis_multi_year():
-    df = get_pvgis_dataset(54.8982, 23.9045, [2020, 2021])
+    df = get_pvgis_dataset(54.8982, 23.9045, [2020, 2023])
     print(df.head())
 
 
