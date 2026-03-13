@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 # PVGIS API endpoint (hourly solar generation model)
-PVGIS_URL = "https://re.jrc.ec.europa.eu/api/v5_2/seriescalc"
+PVGIS_URL = "https://re.jrc.ec.europa.eu/api/v5_3/seriescalc"
 
 def auto_tilt_azimuth(lat):
     """
