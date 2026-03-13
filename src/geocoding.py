@@ -2,6 +2,10 @@ import requests
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
+NOMINATIM_HEADERS = {
+    "User-Agent": "PauliusEnergyProject/1.0 (pauliuspuidokas10@gmail.com)"
+}
+
 
 def normalize_address(address):
     """
@@ -55,13 +59,8 @@ def geocode_address(address):
         "limit": 1,
     }
 
-    # Required User-Agent header (Nominatim blocks requests without it)
-    headers = {
-        "User-Agent": "PauliusEnergyProject/1.0 (pauliuspuidokas10@gmail.com)"
-    }
-
     # Send request to Nominatim
-    resp = requests.get(NOMINATIM_URL, params=params, headers=headers)
+    resp = requests.get(NOMINATIM_URL, params=params, headers=NOMINATIM_HEADERS)
     resp.raise_for_status()  # raise error if request failed
 
     # Parse JSON response
