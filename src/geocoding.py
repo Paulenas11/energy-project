@@ -17,20 +17,32 @@ def normalize_address(address):
         - plain text address (str)
         - structured address (dict) with optional keys:
             street, city, postcode, country
+        - Flexible dict: only 'country' is required, others are optional
 
     Returns:
         str: normalized address string
     """
-    # If address is already a string, return as-is
+    # Case 1: plain string
     if isinstance(address, str):
         return address
 
-    # If structured dict, join available fields into a single string
+    # Cases 2 and 3: structured dictionary
     if isinstance(address, dict):
-        parts = [address.get(field, "") for field in ADDRESS_FIELDS]
-        return ", ".join([p for p in parts if p])
+
+        # Country is mandatory
+        if "country" not in address or not address["country"]:
+            raise ValueError("Address dictionary must include at least 'country'.")
+
+        # Allowed fields in order
+        fields = ["street", "city", "postcode", "country"]
+
+        parts = [address.get(f, "") for f in fields]
+        parts = [p for p in parts if p]  # remove empty fields
+
+        return ", ".join(parts)
 
     raise TypeError("Address must be a string or a dict.")
+
 
 
 def geocode_address(address):
