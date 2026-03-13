@@ -19,12 +19,33 @@ def test_structured_address():
     lat, lon = geocode_address(address)
     print("Structured:", lat, lon)
 
+# Test geocoding using a dictionary with some parts of the address missing (country is mandatory)
+# This verifies that normalize_address() correctly builds a full address string.
+def test_almost_structured_address():
+    address = {
+       # "street": "Studentų g. 50",
+       # "city": "Kaunas",
+        "postcode": "51368",
+        "country": "Lithuania"
+    }
+    lat, lon = geocode_address(address)
+    print("Almost structured:", lat, lon)
 
-# Test geocoding using a partial address (only city).
-# This checks that the function still works even when some fields are missing.
-def test_partial_address():
-    lat, lon = geocode_address({"city": "Vilnius"})
-    print("Partial:", lat, lon)
+
+# Test geocoding using an address without field 'country'
+# This checks that the function still works even when field 'country' is missing.
+def test_address_without_country():
+    try:
+        geocode_address(
+            {
+        "street": "Studentų g. 50",
+        "city": "Kaunas",
+        "postcode": "51368",
+    })
+    except ValueError as e:
+        print("Expected error:", e)
+        return
+    assert False, "Expected ValueError when 'country' is missing"
 
 
 # Test behavior when the address does NOT exist.
@@ -44,5 +65,6 @@ def test_invalid_address():
 if __name__ == "__main__":
     test_plain_text_address()
     test_structured_address()
-    test_partial_address()
+    test_almost_structured_address()
+    test_address_without_country()
     test_invalid_address()

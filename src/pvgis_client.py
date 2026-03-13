@@ -4,7 +4,29 @@ import pandas as pd
 # PVGIS API endpoint (hourly solar generation model)
 PVGIS_URL = "https://re.jrc.ec.europa.eu/api/v5_2/seriescalc"
 
-def get_pvgis_hourly(lat, lon, year, peak_power_kw=1.0, tilt=35, azimuth=0):
+def auto_tilt_azimuth(lat):
+    """
+    Automatically determine optimal tilt and azimuth based on latitude.
+
+    Rules:
+        - Azimuth always 0° (south-facing)
+        - Tilt depends on latitude:
+            < 50°  → 35°
+            50–60° → 40°
+            > 60°  → 45°
+    """
+    if lat < 50:
+        tilt = 35
+    elif lat < 60:
+        tilt = 40
+    else:
+        tilt = 45
+
+    azimuth = 0
+    return tilt, azimuth
+
+
+def get_pvgis_hourly(lat, lon, year, peak_power_kw=1.0):
     """
     Fetch hourly modeled solar generation from PVGIS for a given location and year.
 
@@ -18,6 +40,9 @@ def get_pvgis_hourly(lat, lon, year, peak_power_kw=1.0, tilt=35, azimuth=0):
     Returns:
         DataFrame with hourly solar generation in kWh.
     """
+
+    #Auto-select orientation
+    tilt, azimuth = auto_tilt_azimuth(lat)
 
     # Parameters required by PVGIS API
     params = {
