@@ -112,3 +112,35 @@ ZONE_MAP = {
     # Iceland (not in ENTSO-E market coupling)
     "IS": "IS-ICELAND-NONENTSOE",
 }
+
+
+NEIGHBORS = {
+    "LT": ["LV", "PL", "SE"],
+    "LV": ["LT", "EE"],
+    "EE": ["LV", "FI"],
+    "FI": ["SE", "EE"],
+    "SE": ["FI", "NO", "DK", "LT"],
+    "PL": ["LT", "DE", "CZ", "SK"],
+    "DE": ["PL", "CZ", "AT", "CH", "FR", "NL", "DK"],
+    "CZ": ["DE", "PL", "SK", "AT"],
+    "SK": ["CZ", "PL", "HU", "AT"],
+    "HU": ["SK", "RO", "RS", "HR", "SI", "AT"],
+    "SI": ["AT", "HU", "HR", "IT-NORD"],
+    "HR": ["SI", "HU", "RS", "BA"],
+    "RS": ["HU", "RO", "BG", "MK", "BA", "ME"],
+    "RO": ["HU", "RS", "BG"],
+    "BG": ["RO", "RS", "MK", "GR"],
+    "GR": ["BG", "MK"],
+    "DK": ["DE", "SE", "NO"],
+    "NO": ["SE", "DK"],
+    "NL": ["DE", "BE"],
+    "BE": ["NL", "FR", "DE"],
+    "FR": ["BE", "DE", "CH", "ES"],
+    "ES": ["FR", "PT"],
+    "PT": ["ES"],
+    "CH": ["FR", "DE", "AT", "IT-NORD"],
+    "IE": ["GB"],
+    "NI": ["GB"],
+    "GB": ["IE", "NI", "FR", "NL", "BE"],
+}
+
