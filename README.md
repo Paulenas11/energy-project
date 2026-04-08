@@ -55,23 +55,6 @@ pip install -r requirements.txt
 
 ---
 
-##  Usage Workflow
-
-1. Run `01_entsoe.ipynb`  
-   → Collect and export ENTSO-E market data  
-
-2. Run `02_pvgis.ipynb`  
-   → Retrieve PVGIS solar data  
-   → Merge with ENTSO-E dataset  
-
-3. Final output:
-
-```
-data/market_with_pvgis.csv
-```
-
----
-
 ##  Time Handling
 
 All time series:
