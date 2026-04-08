@@ -21,7 +21,7 @@ def test_normalize_to_hourly_quarter_hour_input():
 
 
 def test_entsoe_single_zone():
-    df = get_entsoe_dataset("LT", "2020-01-01", "2020-01-03")
+    df = get_entsoe_dataset("LT", "2025-09-01", "2025-11-30")
 
     assert isinstance(df, pd.DataFrame)
     assert "price_eur_mwh" in df.columns
@@ -49,26 +49,41 @@ def test_entsoe_invalid_zone():
 
 
 def test_debug_output():
-    df = get_entsoe_dataset(["LT", "SE4"], "2020-01-01", "2020-01-05")
+    zones = ["LT", "RO"]
+    startDate = "2015-01-01"
+    endDate = "2026-03-15"
+    df = get_entsoe_dataset(zones, "2015-01-01", "2026-03-15")
+
+    df_filtered = df[df["zone"].isin(zones)]
+    csv_name = f"entsoe_{'_'.join(zones)}_{startDate}_{endDate}.csv"
+    df_filtered.to_csv(csv_name)
 
     print("\n--- Zones present ---")
-    print(df["zone"].unique().tolist())
+    print(df_filtered["zone"].unique().tolist())
 
-    # Print head(10) for each zone separately
-    for zone in df["zone"].unique():
+    for zone in df_filtered["zone"].unique():
         print(f"\n--- First 10 rows for zone {zone} ---")
-        print(df[df["zone"] == zone].head(10)[["price_eur_mwh"] +
-                                              [c for c in df.columns if c.startswith("gen_") or c.startswith("fc_")]])
+        print(df_filtered[df_filtered["zone"] == zone].head(10)[
+            ["price_eur_mwh"] +
+            [c for c in df_filtered.columns if c.startswith("gen_") or c.startswith("fc_")]
+        ])
+
+    for zone in df_filtered["zone"].unique():
+        print(f"\n--- Last 10 rows for zone {zone} ---")
+        print(df_filtered[df_filtered["zone"] == zone].tail(10)[
+            ["price_eur_mwh"] +
+            [c for c in df_filtered.columns if c.startswith("gen_") or c.startswith("fc_")]
+        ])
 
     print("\n--- Time index ---")
-    print("Start:", df.index.min())
-    print("End:", df.index.max())
+    print("Start:", df_filtered.index.min())
+    print("End:", df_filtered.index.max())
 
 
 if __name__ == "__main__":
-    test_normalize_to_hourly_hourly_input()
-    test_normalize_to_hourly_quarter_hour_input()
-    test_entsoe_single_zone()
-    test_entsoe_multiple_zones()
-    test_entsoe_invalid_zone()
+   # test_normalize_to_hourly_hourly_input()
+   # test_normalize_to_hourly_quarter_hour_input()
+   # test_entsoe_single_zone()
+    #test_entsoe_multiple_zones()
+    #test_entsoe_invalid_zone()
     test_debug_output()
