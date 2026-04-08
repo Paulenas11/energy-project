@@ -11,7 +11,7 @@ from src.entsoe_client import (
     get_wind_solar_forecast,
     get_crossborder_flows,
 )
-from src.entsoe_zones import ZONE_MAP, NEIGHBORS
+from src.entsoe_static import ZONE_MAP, NEIGHBORS
 
 def test_get_client_success():
     """
