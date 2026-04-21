@@ -22,16 +22,6 @@ def normalize_to_hourly(df):
     """
     Normalize any ENTSO‑E DataFrame to hourly resolution.
 
-    Why:
-        - ENTSO‑E sometimes returns 15‑min or 30‑min data.
-        - Dataset requires strictly hourly alignment.
-        - Some endpoints return Series instead of DataFrame.
-
-    Steps:
-        1. Convert Series → DataFrame
-        2. Skip empty or non‑datetime indexed data
-        3. If already hourly → return as-is
-        4. Otherwise resample to hourly mean
     """
     if isinstance(df, pd.Series):
         df = df.to_frame()
@@ -73,18 +63,6 @@ def split_into_year_chunks(start, end):
     """
     Split a long date range into year-sized chunks.
 
-    Why:
-        - ENTSO‑E API performs poorly on large multi-year queries.
-        - Caching works best when each chunk is independent.
-        - Dataset builder can resume from cache chunk-by-chunk.
-
-    Example:
-        2015-01-01 → 2026-03-15
-        becomes:
-            (2015 → 2016)
-            (2016 → 2017)
-            ...
-            (2026 → 2026-03-15)
     """
     start = pd.Timestamp(start)
     end = pd.Timestamp(end)
@@ -103,17 +81,6 @@ def split_into_year_chunks(start, end):
 def get_entsoe_dataset(zones, start, end):
     """
     Build a unified hourly dataset for one or multiple bidding zones.
-
-    Features:
-        - Year-based chunking for performance
-        - Full caching at dataset level (per zone per chunk)
-        - Automatic normalization of:
-            * prices
-            * generation
-            * wind/solar forecast
-            * cross-border flows
-        - Hourly alignment across all data sources
-        - Concatenation of all chunks and zones
 
     Parameters:
         zones (str or list[str]): One or multiple bidding zones

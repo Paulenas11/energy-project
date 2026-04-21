@@ -22,12 +22,6 @@ def get_domain_for_date(zone, date):
     """
     Resolve the correct ENTSO‑E domain (EIC code) for a given zone and date.
 
-    Why this is needed:
-        - Some bidding zones change their domain codes over time.
-        - ZONE_MAP may contain:
-            * a single static domain (str)
-            * a list of (start, end, domain) tuples for time‑dependent mapping
-
     Parameters:
         zone (str): Human-readable zone code (e.g., "LT", "SE4")
         date (Timestamp): Timestamp with timezone
@@ -58,10 +52,6 @@ def get_domain_for_date(zone, date):
 def get_client():
     """
     Create a fresh ENTSO‑E API client instance.
-
-    Why:
-        - Some ENTSO‑E calls behave better with a new client per request.
-        - Ensures API_KEY is validated before use.
     """
     if API_KEY is None:
         raise ValueError("API_KEY not set. Please update config.py")
@@ -165,8 +155,6 @@ def _generate_border_pairs(country: str):
     """
     Generate all directional flow pairs for a country.
 
-    Example:
-        LT → [(LT, LV), (LV, LT), (LT, PL), (PL, LT)]
     """
     if country not in NEIGHBORS:
         raise KeyError(f"No neighbor data for country '{country}'")
@@ -238,13 +226,6 @@ def get_crossborder_flows(start, end, country):
     """
     Fetch all incoming and outgoing physical flows for a country.
 
-    Steps:
-        1. Try cache
-        2. For each neighbor:
-            - fetch country → neighbor
-            - fetch neighbor → country
-        3. Combine all flow columns
-        4. Save to cache
     """
     log(f"Crossborder flows for {country} {start} → {end}")
 
@@ -264,7 +245,6 @@ def get_crossborder_flows(start, end, country):
         df1 = get_physical_flow_pair(start, end, country, neighbor)
         df2 = get_physical_flow_pair(start, end, neighbor, country)
 
-        # Normalize Series → DataFrame
         if isinstance(df1, pd.Series):
             df1 = df1.to_frame()
         if isinstance(df2, pd.Series):
