@@ -1,85 +1,120 @@
-# py -m streamlit run src/optimization/app.py
-
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime
+import pytz
 
-from src.optimization.run_test import (
-    run_period,
-    DEFAULT_PARAMS,
-)
+from dispatch import DispatchModel
+from loader import build_dataset
 
-# Configure Streamlit page layout
-st.set_page_config(page_title="Battery Optimization", layout="wide")
 
-st.title("Battery Optimization Tool")
+st.set_page_config(page_title="Battery Dispatch Tool", layout="wide")
+st.title("Battery Dispatch (Prosumers)")
 
-# Sidebar input section
+# =========================
+# SIDEBAR
+# =========================
 st.sidebar.header("Input")
 
-# File upload for OBJ_NAMAS CSV
-uploaded_file = st.sidebar.file_uploader("Upload OBJ_NAMAS CSV", type=["csv"])
+uploaded_file = st.sidebar.file_uploader(
+    "Upload OBJ_NAMAS CSV",
+    type=["csv"]
+)
 
-# Date range selection
-start_date = st.sidebar.date_input("Start date", datetime(2022, 9, 1))
-end_date = st.sidebar.date_input("End date", datetime(2022, 9, 8))
+start_date = st.sidebar.date_input("Start date", datetime(2022, 1, 1))
+end_date = st.sidebar.date_input("End date", datetime(2022, 12, 31))
 
-# ENTSO-E bidding zone selection
 zone = st.sidebar.selectbox("ENTSO-E zone", ["LT", "LV", "EE"], index=0)
 
-# Reset UI state
-if st.sidebar.button("Clear"):
-    st.experimental_rerun()
+st.sidebar.subheader("System")
 
-# Battery parameter inputs
-st.sidebar.subheader("Battery parameters")
-DEFAULT_PARAMS["E_max"] = st.sidebar.number_input("Battery capacity (kWh)", value=DEFAULT_PARAMS["E_max"])
-DEFAULT_PARAMS["P_ch_max"] = st.sidebar.number_input("Max charge power (kW)", value=DEFAULT_PARAMS["P_ch_max"])
-DEFAULT_PARAMS["P_dis_max"] = st.sidebar.number_input("Max discharge power (kW)", value=DEFAULT_PARAMS["P_dis_max"])
-DEFAULT_PARAMS["SoC_start"] = st.sidebar.number_input("Initial SoC (kWh)", value=DEFAULT_PARAMS["SoC_start"])
+P_pv = st.sidebar.number_input("PV capacity (kW)", min_value=0.0, value=5.0)
 
-# Main action button
-if st.sidebar.button("Optimize"):
+st.sidebar.subheader("Battery")
 
-    # Ensure user uploaded a CSV file
+P_b = st.sidebar.number_input("Battery power (kW)", min_value=0.0, value=3.0)
+E_b = st.sidebar.number_input("Battery energy (kWh)", min_value=0.0, value=10.0)
+E0 = st.sidebar.number_input("Initial SoC (kWh)", min_value=0.0, value=5.0)
+
+# =========================
+# RUN BUTTON
+# =========================
+if st.sidebar.button("Run Optimization"):
+
     if uploaded_file is None:
-        st.error("Please upload OBJ_NAMAS CSV first.")
+        st.error("Upload CSV first.")
         st.stop()
 
-    # Save uploaded file temporarily for processing
-    temp_path = "temp_load.csv"
+    # Save uploaded file
+    temp_path = "temp_obj.csv"
     with open(temp_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    st.info("Running optimization...")
+    tz = pytz.timezone("Europe/Vilnius")
 
-    # Convert date inputs to datetime objects
-    start_dt = datetime.combine(start_date, datetime.min.time())
-    end_dt = datetime.combine(end_date, datetime.min.time())
+    start_dt = tz.localize(datetime.combine(start_date, datetime.min.time()))
+    end_dt = tz.localize(datetime.combine(end_date, datetime.min.time()))
 
-    # Run the full optimization workflow
-    results, metrics = run_period(
+    # =========================
+    # LOAD DATA
+    # =========================
+    st.info("Loading data...")
+
+    df = build_dataset(
+        obj_path=temp_path,
         start=start_dt,
         end=end_dt,
-        zone=zone,
-        load_csv_path=temp_path,
-        params=DEFAULT_PARAMS
+        zone=zone
     )
 
-    st.success("Optimization completed!")
+    st.success("Data loaded")
 
-    # Display results table
-    st.subheader("Results table")
-    st.dataframe(results)
+    # =========================
+    # PARAMS
+    # =========================
+    params = {
+        "eta_c": 0.95,
+        "eta_d": 0.95,
+        "SoC_min": 0.1,
+        "SoC_max": 0.9,
+        "P_grid_max": 10.0,
+        "X": 0.0,
+        "Y": 0.0,
+        "c_b_var": 0.0
+    }
 
-    # Plot selected energy flow variables
-    st.subheader("Energy flows")
-    fig, ax = plt.subplots(figsize=(14, 6))
-    cols = [c for c in ["load", "gen_ren", "P_ch", "P_dis", "SoC"] if c in results.columns]
-    results[cols].plot(ax=ax)
-    st.pyplot(fig)
+    # =========================
+    # RUN DISPATCH
+    # =========================
+    st.info("Running optimization...")
 
-    # Display financial metrics
-    st.subheader("Financial summary")
-    st.json(metrics["financial"])
+    model = DispatchModel(
+        P_pv=P_pv,
+        P_b=P_b,
+        E_b=E_b,
+        params=params
+    )
+
+    df_dispatch = model.run(df, E0)
+
+    st.success("Done")
+
+    # =========================
+    # OUTPUT
+    # =========================
+    st.subheader("Results")
+
+    st.dataframe(df_dispatch, use_container_width=True)
+
+    # =========================
+    # DOWNLOAD
+    # =========================
+    st.subheader("Download")
+
+    csv = df_dispatch.to_csv().encode("utf-8")
+
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name="dispatch_results.csv",
+        mime="text/csv"
+    )
