@@ -69,44 +69,40 @@ def _resolve_zone(zone: str) -> str:
     return ZONE_MAP[zone]
 
 def get_day_ahead_prices(start, end, zone):
-    """
-    Fetch day-ahead electricity prices for a given zone and time range.
-
-    Includes:
-        - caching (HIT/MISS)
-        - timezone normalization
-        - domain resolution
-    """
     log(f"Prices {zone} {start} → {end}")
 
-    # Try cache first
     cached = cache_load("prices", start, end, zone)
     if cached is not None:
         log("Loaded from cache")
         return cached
 
-    # Fetch from ENTSO‑E
     log("Fetching from ENTSO-E...")
     client = get_client()
-    start = pd.Timestamp(start, tz=TIMEZONE)
-    end = pd.Timestamp(end, tz=TIMEZONE)
+
+    # --- FIXED TZ HANDLING ---
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if start.tzinfo is None:
+        start = start.tz_localize(TIMEZONE)
+    else:
+        start = start.tz_convert(TIMEZONE)
+
+    if end.tzinfo is None:
+        end = end.tz_localize(TIMEZONE)
+    else:
+        end = end.tz_convert(TIMEZONE)
+    # --------------------------
 
     domain = get_domain_for_date(zone, start)
     df = client.query_day_ahead_prices(domain, start=start, end=end)
 
-    # Save to cache
     cache_save("prices", start, end, zone, df)
     log("Saved to cache")
     return df
 
-def get_generation(start, end, zone=ZONE_LT):
-    """
-    Fetch actual generation data (solar, wind, etc.) for a zone.
 
-    Notes:
-        - MultiIndex columns are handled later in dataset builder.
-        - Default zone is LT (useful for notebooks).
-    """
+def get_generation(start, end, zone=ZONE_LT):
     log(f"Generation {zone} {start} → {end}")
 
     cached = cache_load("generation", start, end, zone)
@@ -116,8 +112,21 @@ def get_generation(start, end, zone=ZONE_LT):
 
     log("Fetching from ENTSO-E...")
     client = get_client()
-    start = pd.Timestamp(start, tz=TIMEZONE)
-    end = pd.Timestamp(end, tz=TIMEZONE)
+
+    # --- FIXED TZ HANDLING ---
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if start.tzinfo is None:
+        start = start.tz_localize(TIMEZONE)
+    else:
+        start = start.tz_convert(TIMEZONE)
+
+    if end.tzinfo is None:
+        end = end.tz_localize(TIMEZONE)
+    else:
+        end = end.tz_convert(TIMEZONE)
+    # --------------------------
 
     domain = get_domain_for_date(zone, start)
     df = client.query_generation(domain, start=start, end=end)
@@ -126,12 +135,8 @@ def get_generation(start, end, zone=ZONE_LT):
     log("Saved to cache")
     return df
 
-def get_wind_solar_forecast(start, end, zone):
-    """
-    Fetch wind and solar generation forecast for a zone.
 
-    Returned columns depend on ENTSO‑E availability.
-    """
+def get_wind_solar_forecast(start, end, zone):
     log(f"Forecast {zone} {start} → {end}")
 
     cached = cache_load("forecast", start, end, zone)
@@ -141,8 +146,21 @@ def get_wind_solar_forecast(start, end, zone):
 
     log("Fetching from ENTSO-E...")
     client = get_client()
-    start = pd.Timestamp(start, tz=TIMEZONE)
-    end = pd.Timestamp(end, tz=TIMEZONE)
+
+    # --- FIXED TZ HANDLING ---
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if start.tzinfo is None:
+        start = start.tz_localize(TIMEZONE)
+    else:
+        start = start.tz_convert(TIMEZONE)
+
+    if end.tzinfo is None:
+        end = end.tz_localize(TIMEZONE)
+    else:
+        end = end.tz_convert(TIMEZONE)
+    # --------------------------
 
     domain = get_domain_for_date(zone, start)
     df = client.query_wind_and_solar_forecast(domain, start=start, end=end)
@@ -150,6 +168,7 @@ def get_wind_solar_forecast(start, end, zone):
     cache_save("forecast", start, end, zone, df)
     log("Saved to cache")
     return df
+
 
 def _generate_border_pairs(country: str):
     """
@@ -167,22 +186,21 @@ def _generate_border_pairs(country: str):
 
 
 def get_physical_flow_pair(start, end, zone_from, zone_to):
-    """
-    Fetch physical cross-border flow between two TSO domains.
-
-    Uses ENTSO‑E A75 document type (physical flows).
-    Parsed manually from XML because the official client does not support A75.
-    """
     log(f"Flow {zone_from} → {zone_to} {start} → {end}")
 
     # Normalize timestamps (A75 requires timezone-naive format)
-    start = pd.Timestamp(start).tz_localize(None)
-    end = pd.Timestamp(end).tz_localize(None)
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if start.tzinfo is not None:
+        start = start.tz_convert("UTC").tz_localize(None)
+
+    if end.tzinfo is not None:
+        end = end.tz_convert("UTC").tz_localize(None)
 
     domain_from = TSO_MAP[zone_from]
     domain_to = TSO_MAP[zone_to]
 
-    # Build A75 request URL
     url = (
         "https://web-api.tp.entsoe.eu/api?"
         f"documentType=A75"
@@ -192,6 +210,7 @@ def get_physical_flow_pair(start, end, zone_from, zone_to):
         f"&periodEnd={end.strftime('%Y%m%d%H%M')}"
         f"&securityToken={API_KEY}"
     )
+
 
     response = requests.get(url)
     if response.status_code != 200:
