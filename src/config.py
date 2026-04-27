@@ -1,4 +1,4 @@
-API_KEY = "772f3c1d-e253-4ebd-8450-59dec008dd06"
+API_KEY = "YOUR_API_KEY"
 
 ZONE_LT = "LT"
 TIMEZONE = "Europe/Brussels"
