@@ -1,9 +1,0 @@
-geocode longtitute latitude
-	
-iš adreso ištraukti longtitude latitude
-keliais būdais (betkoks adresas arba strukturizuota adresas )
-patikrinti ar tikrai adresa rado, patikrinimai
-
-pvgis atejimo duomenis kordinates (long lat ir metus 2025 arba masyva)
-atidavimas csv failas
-salis adresas, viska ka duoda

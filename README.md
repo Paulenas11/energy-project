@@ -1,65 +1,111 @@
-#  Energy Data Pipeline — ENTSO-E + PVGIS Integration
+# Energy Data Pipeline & Battery Dispatch Optimization  
+### ENTSO‑E + PVGIS Integration • Myopic Battery Dispatch Model • Streamlit App
 
-This project implements a complete data pipeline for collecting, processing, and merging electricity market data from **ENTSO-E** with modeled solar generation data from **PVGIS**.
+This project implements a complete workflow for:
 
-The final output is a unified, hourly dataset suitable for:
+1. Collecting and processing electricity market data from ENTSO‑E  
+2. Retrieving modeled solar generation from PVGIS  
+3. Building a unified hourly dataset  
+4. Running a battery dispatch optimization model  
+5. Visualizing and exporting results through a Streamlit application  
+
+The system is designed for:
 
 - Energy market analysis  
-- Forecasting models  
+- PV + battery system studies  
 - Academic research  
-- Renewable integration studies  
+- Forecasting and optimization experiments  
 
 ---
 
-##  Project Goals
+## Project Overview
 
-###  Retrieve ENTSO-E Market Data
-Hourly electricity market data:
-- Day-ahead prices  
-- Actual generation (solar, wind)  
-- Forecasted generation  
-- Cross-border flows  
+### 1. ENTSO‑E Data Pipeline
+Retrieves and processes:
 
-###  Retrieve PVGIS Solar Data
-- Hourly modeled solar generation  
-- Based on a selected geographic location  
+- Day‑ahead electricity prices  
+- Actual generation (solar, wind, hydro, thermal)  
+- Forecasted renewable generation  
+- Cross‑border physical flows  
+- TSO‑level domain mapping  
+- Time‑zone‑corrected hourly datasets  
 
-###  Data Alignment
-- Convert all datasets to a common hourly time index  
-- Standard timezone: `Europe/Vilnius`  
+### 2. PVGIS Solar Modeling
+Retrieves:
 
-###  Dataset Merging
-- Combine ENTSO-E and PVGIS data  
-- Produce a clean, analysis-ready dataset  
+- Hourly modeled PV generation  
+- Based on geographic coordinates  
+- Using PVGIS “Series” API  
+
+### 3. Unified Dataset Builder
+All data is:
+
+- Converted to hourly resolution  
+- Localized to `Europe/Vilnius`  
+- Merged into a single DataFrame  
+
+### 4. Battery Dispatch Optimization
+Implements a myopic (day‑by‑day) linear optimization model:
+
+- Battery charge/discharge  
+- PV self‑consumption  
+- Grid import/export  
+- SoC constraints  
+- End‑of‑day SoC requirement  
+- Optional curtailment and load shedding  
+
+### 5. Streamlit Application
+Interactive UI for:
+
+- Uploading Prosumer Dataset CSV  
+- Selecting date range  
+- Running optimization  
+- Viewing results  
+- Exporting CSV  
 
 ---
 
-##  Project Structure
+## Project Structure
 
 ```
 project/
 │
+├── optimization/
+│   ├── app.py              # Streamlit UI
+│   ├── dispatch.py         # Battery dispatch optimization model
+│   ├── loader.py           # Dataset builder (load + PV + prices)
+│   ├── cost_model.py       # TAC cost model
+│   └── cache/              # Cached ENTSO‑E responses
+│
 ├── src/
-│   ├── entsoe_client.py      # Custom ENTSO-E API wrapper
-│   ├── pvgis_client.py       # PVGIS API client
-│   ├── geocoding.py          # Nominatim geocoding utility
-│   └── ...
+│   ├── entsoe_client.py    # ENTSO‑E API wrapper
+│   ├── entsoe_dataset.py   # Dataset utilities
+│   ├── entsoe_static.py    # Domain mappings, TSO codes
+│   ├── pvgis_client.py     # PVGIS API wrapper
+│   ├── pvgis_dataset.py    # PVGIS dataset builder
+│   ├── geocoding.py        # Nominatim geocoder
+│   └── market_data.py      # Market data helpers
 │
 ├── notebooks/
-│   ├── 01_entsoe.ipynb       # ENTSO-E data collection & export
-│   └── 02_pvgis.ipynb        # PVGIS retrieval & dataset merging
+│   ├── 01_entsoe.ipynb     # ENTSO‑E data exploration
+│   ├── 02_pvgis.ipynb      # PVGIS modeling
+│   └── 03_merge.ipynb      # Dataset merging
 │
-├── data/
-│   ├── market_<start>_<end>.csv   # ENTSO-E dataset
-│   └── market_with_pvgis.csv      # Final merged dataset
+├── tests/
+│   ├── test_entsoe_client.py
+│   ├── test_entsoe_dataset.py
+│   ├── test_geocoding.py
+│   └── test_pvgis_dataset.py
 │
+├── data/                   # Exported datasets
+├── cache/                  # Cached API responses
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-##  Installation
+## Installation
 
 ### Create Virtual Environment
 
@@ -67,9 +113,9 @@ project/
 python -m venv .venv
 ```
 
-Activate it:
+Activate:
 
-**Linux / macOS**
+**Linux/macOS**
 ```bash
 source .venv/bin/activate
 ```
@@ -87,48 +133,52 @@ pip install -r requirements.txt
 
 ---
 
-##  Usage Workflow
+## Running the Streamlit Application
 
-1. Run `01_entsoe.ipynb`  
-   → Collect and export ENTSO-E market data  
-
-2. Run `02_pvgis.ipynb`  
-   → Retrieve PVGIS solar data  
-   → Merge with ENTSO-E dataset  
-
-3. Final output:
-
-```
-data/market_with_pvgis.csv
+```bash
+cd energy-project/src/optimization
+streamlit run app.py
 ```
 
----
+To run the optimization:
 
-##  Time Handling
-
-All time series:
-- Converted to hourly resolution  
-- Localized to `Europe/Vilnius` timezone  
-- Properly aligned before merging  
-
-This ensures compatibility for modeling and forecasting tasks.
+- Upload Prosumer Dataset CSV  
+- Select date range  
+- Choose ENTSO‑E zone  
+- Set PV and battery parameters  
+- Run optimization  
+- Download results  
 
 ---
 
-##  Output Dataset
+## Output Dataset
 
-The final dataset includes:
+Each row contains:
 
-- Market prices  
-- Actual renewable generation  
-- Forecasted generation  
-- Cross-border flows  
-- Modeled PV generation  
-
-All indexed by hourly timestamps.
+| Column | Description |
+|--------|-------------|
+| load | Household consumption (kW) |
+| gen_pv | PV generation (kW) |
+| price | Day‑ahead price (€/MWh) |
+| P_pv_use | PV → load |
+| P_ch | PV → battery |
+| P_dis | Battery → load |
+| P_grid_imp | Import from grid |
+| P_grid_exp | Export to grid |
+| E | Battery SoC (kWh) |
 
 ---
 
-##  License
+## Time Handling
+
+All timestamps are:
+
+- Localized to `Europe/Vilnius`  
+- Aligned to hourly resolution  
+- DST‑safe (handles ambiguous/nonexistent times)  
+
+---
+
+## License
 
 This project is intended for academic and research use.
